@@ -1,0 +1,31 @@
+[
+  {
+    "slug": "player-one",
+    "name": "Player One",
+    "roles": ["DPS", "Entry"],
+    "hogwartsHouse": "Gryffindor",
+    "leagues": ["League 7", "MSA"],
+    "teams": [
+      { "name": "Team Alpha", "season": "2024" }
+    ],
+    "bio": "Fast, aggressive player with a knack for quick rotations and smart utility usage.",
+    "image": "images/player-one.jpg",
+    "socials": [
+      { "label": "Twitter", "url": "https://twitter.com/example" }
+    ]
+  },
+  {
+    "slug": "player-two",
+    "name": "Player Two",
+    "roles": ["Support"],
+    "hogwartsHouse": "Slytherin",
+    "leagues": ["Black Lake"],
+    "teams": [
+      { "name": "Team Bravo", "season": "2023" },
+      { "name": "Free Agents", "season": "2022" }
+    ],
+    "bio": "Strategic anchor who excels in positioning and map control.",
+    "image": "images/player-two.jpg",
+    "socials": []
+  }
+]
