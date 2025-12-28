@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Player profile</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a href="index.html" class="back">← Back to home</a>
+  <main id="profile"></main>
+
+  <script>
+    function getQueryParam(name) {
+      const url = new URL(location.href);
+      return url.searchParams.get(name);
+    }
+
+    function makeList(title, items) {
+      if (!items || !items.length) return '';
+      const htmlItems = items.map(it => {
+        if (typeof it === 'string') return `<li>${it}</li>`;
+        if (it.name && it.season) return `<li>${it.name} <span class="muted">(${it.season})</span></li>`;
+        return `<li>${JSON.stringify(it)}</li>`;
+      }).join('');
+      return `<section><h4>${title}</h4><ul>${htmlItems}</ul></section>`;
+    }
+
+    async function init() {
+      const slug = getQueryParam('id');
+      const resp = await fetch('profiles.json');
+      if (!resp.ok) throw new Error('Could not load profiles.json');
+      const players = await resp.json();
+      const p = players.find(x => x.slug === slug);
+      const container = document.getElementById('profile');
+
+      if (!p) {
+        container.innerHTML = '<p>Player not found.</p>';
+        return;
+      }
+
+      const roles = (p.roles || []).map(r => `<span class="badge">${r}</span>`).join(' ');
+      const house = p.hogwartsHouse ? `<div class="house">Hogwarts house: <strong>${p.hogwartsHouse}</strong></div>` : '';
+      const leaguesHtml = makeList('Leagues', p.leagues || []);
+      const teamsHtml = makeList('Teams', p.teams || []);
+      const socials = (p.socials || []).map(s => `<a href="${s.url}" target="_blank" rel="noopener">${s.label}</a>`).join(' • ');
+
+      container.innerHTML = `
+        <article class="profile-card full">
+          <img src="${p.image || 'images/default-avatar.png'}" alt="${p.name}" class="avatar"/>
+          <div class="info">
+            <h1>${p.name}</h1>
+            <div class="roles">${roles}</div>
+            ${house}
+            <div class="bio">${p.bio || ''}</div>
+            ${leaguesHtml}
+            ${teamsHtml}
+            ${p.socials ? `<section><h4>Socials</h4><p class="socials">${socials}</p></section>` : ''}
+          </div>
+        </article>
+      `;
+    }
+
+    init().catch(err => {
+      console.error(err);
+      document.getElementById('profile').textContent = 'Error loading profile';
+    });
+  </script>
+</body>
+</html>
