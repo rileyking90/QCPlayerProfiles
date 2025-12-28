@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QC Player Profiles</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>QC Player Profiles</h1>
+    <p>Browse player profiles. Select a player from the dropdown or search by name, role, house, team, or league.</p>
+  </header>
+
+  <main>
+    <div class="controls">
+      <input id="search" placeholder="Search players (name, role, house, team, league)" aria-label="Search players" />
+      <select id="playerSelect" aria-label="Select a player">
+        <option value="">Select a player…</option>
+      </select>
+    </div>
+
+    <section id="results" aria-live="polite"></section>
+  </main>
+
+  <script>
+    async function init() {
+      const resp = await fetch('profiles.json');
+      if (!resp.ok) throw new Error('Could not load profiles.json');
+      const players = await resp.json();
+
+      // Populate dropdown
+      const sel = document.getElementById('playerSelect');
+      players.forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.slug;
+        o.textContent = p.name + (p.team ? ' — ' + (p.team[0] ? p.team[0].name : '') : '');
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', () => {
+        const slug = sel.value;
+        if (slug) location.href = `profile.html?id=${encodeURIComponent(slug)}`;
+      });
+
+      // Fuse.js fuzzy search across name, roles, house, leagues, teams, bio
+      const fuse = new Fuse(players, {
+        keys: [
+          'name',
+          'roles',
+          'hogwartsHouse',
+          'leagues',
+          'teams.name',
+          'bio'
+        ],
+        threshold: 0.3,
+      });
+
+      const input = document.getElementById('search');
+      const resultsEl = document.getElementById('results');
+
+      function makeCard(p) {
+        const a = document.createElement('a');
+        a.href = `profile.html?id=${encodeURIComponent(p.slug)}`;
+        a.className = 'player-card';
+        const img = document.createElement('img');
+        img.src = p.image || 'images/default-avatar.png';
+        img.alt = p.name;
+        img.className = 'thumb';
+        const div = document.createElement('div');
+        const h = document.createElement('h3');
+        h.textContent = p.name;
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const roles = (p.roles || []).join(', ');
+        const house = p.hogwartsHouse || '';
+        const snippet = document.createElement('p');
+        snippet.className = 'snippet';
+        snippet.textContent = p.bio ? (p.bio.length > 120 ? p.bio.slice(0,120)+'…' : p.bio) : '';
+        meta.textContent = [roles, house].filter(Boolean).join(' • ');
+        div.appendChild(h);
+        div.appendChild(meta);
+        div.appendChild(snippet);
+        a.appendChild(img);
+        a.appendChild(div);
+        return a;
+      }
+
+      function renderList(list) {
+        resultsEl.innerHTML = '';
+        if (!list.length) {
+          resultsEl.textContent = 'No players found';
+          return;
+        }
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        list.forEach(p => {
+          grid.appendChild(makeCard(p));
+        });
+        resultsEl.appendChild(grid);
+      }
+
+      // initial full list
+      renderList(players);
+
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        if (!q) return renderList(players);
+        const res = fuse.search(q).map(r => r.item);
+        renderList(res);
+      });
+    }
+
+    init().catch(err => {
+      console.error(err);
+      document.getElementById('results').textContent = 'Failed to load players.';
+    });
+  </script>
+</body>
+</html>
